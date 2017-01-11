@@ -16,7 +16,7 @@
 os_event_t user_procTaskQueue[user_procTaskQueueLen];
 static volatile os_timer_t testTimer;
 static void loop(os_event_t *events);
-LOCAL struct espconn ptrespconn;
+static struct espconn ptrespconn;
 
 // variable modified indirectly by interrupt handler
 volatile uint8 direction, lastDirection;
@@ -108,7 +108,7 @@ void ICACHE_FLASH_ATTR user_init()
     display_welcome_message();
 
     //Turn on Soft AP mode
-    wifi_set_opmode(STATIONAP_MODE);
+    wifi_set_opmode(SOFTAP_MODE);
     softap_config();
 
     //Initialize UDP listener
@@ -148,7 +148,7 @@ void gpio_intr_handler(int* arg)
     ETS_GPIO_INTR_ENABLE();   
 }
 
-LOCAL void ICACHE_FLASH_ATTR udp_recv_handler(void *arg, char *pusrdata, unsigned short length)
+void ICACHE_FLASH_ATTR udp_recv_handler(void *arg, char *pusrdata, unsigned short length)
 {
     //espconn_sent(&ptrespconn, DeviceBuffer, length);
 }
