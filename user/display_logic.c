@@ -35,6 +35,17 @@ void display_init()
 {
 	oled_init();
 	currentPage = 0;
+
+	os_strcpy(batteryStatus.bat1Voltage, "12.3");
+	os_strcpy(batteryStatus.bat2Voltage, "12.1");
+	os_strcpy(batteryStatus.bat2Current, "-01.5");
+
+	os_strcpy(fuelTankStatus.level, "98");
+	os_strcpy(waterTankStatus.level, "57");
+
+	engineHoursStatus.totalHours = 1832;
+	engineHoursStatus.tripHours = 21;
+
 }
 
 void display_next_page()
@@ -131,12 +142,9 @@ void _display_engine_hours()
 
 void _clear_buffer()
 {
-	uint8_t i,j;
+	uint8_t i;
 	for(i=0; i<4; ++i)
 	{
-		for(j=0; j<20; ++j)
-		{
-			oledBuffer[i][j] = 0;
-		}
+		os_memset(oledBuffer[i], 0, 20);
 	}
 }
