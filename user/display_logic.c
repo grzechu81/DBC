@@ -110,7 +110,7 @@ void _display_battery_status()
 	
 	os_sprintf(oledBuffer[0], "   Battery status   ");
 	os_sprintf(oledBuffer[1], "H:#######  S:#####  ");
-	os_sprintf(oledBuffer[2], "V: %sV   V: %sV ", batteryStatus.bat2Voltage, batteryStatus.bat1Voltage);
+	os_sprintf(oledBuffer[2], "V: %sV   V: %sV", batteryStatus.bat2Voltage, batteryStatus.bat1Voltage);
 	os_sprintf(oledBuffer[3], "I: %sA", batteryStatus.bat2Current);
 
 	oled_put_buffer(oledBuffer);
