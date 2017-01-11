@@ -90,6 +90,18 @@ void oled_str(char* string)
 	}
 }
 
+void oled_put_buffer(char buffer[4][20])
+{
+	uint8_t line, row;
+	for(line = 0; line< 4; ++line)
+	{
+		for(row = 0; row < 20; ++row)
+		{
+			oled_data(buffer[line][row]);
+		}
+	}
+}
+
 void send_4bits(uint8_t data)
 {
 	GPIO_OUTPUT_SET(GPIO_ID_PIN(PIN_E_N), 1);

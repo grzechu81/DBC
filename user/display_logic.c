@@ -1,27 +1,31 @@
 #include "display_logic.h"
 #include "oled_4bit.h"
+#include "osapi.h"
 
-volatile uint8_t current_page;
+volatile uint8_t currentPage;
+
+char oledBuffer[4][20] = {0};
 
 struct battery_status
 {
-	uint8_t voltage;
-	uint8_t current;
-	char currentSign;
-};
+	char* bat1Voltage[5]; //99,9\0
+	char* bat2Voltage[5]; //99,9\0
+	char* bat2Current[6]; //+99.9\0
+} batteryStatus;
 
 struct tank_status
 {
-	uint8_t level;
-};
+	char* level[4]; //100\0
+} fuelTankStatus, waterTankStatus;
 
 struct engine_hours_status
 {
-	uint32_t total_hours;
-	uint32_t trip_hours;
-};
+	uint32_t totalHours;
+	uint32_t tripHours;
+} engineHoursStatus;
 
 void _show_page();
+void _clear_buffer();
 void _clear_display();
 void _display_battery_status();
 void _display_tanks_status();
@@ -30,32 +34,32 @@ void _display_engine_hours();
 void display_init()
 {
 	oled_init();
-	current_page = 0;
+	currentPage = 0;
 }
 
 void display_next_page()
 {
-	if(current_page < MAX_PAGE)
-		current_page++;
+	if(currentPage < MAX_PAGE)
+		currentPage++;
 	else
-		current_page = MIN_PAGE;
+		currentPage = MIN_PAGE;
 
 	_show_page();
 }
 
 void display_prev_page()
 {
-	if(current_page > MIN_PAGE)
-		current_page--;
+	if(currentPage > MIN_PAGE)
+		currentPage--;
 	else
-		current_page = MAX_PAGE;
+		currentPage = MAX_PAGE;
 
 	_show_page();
 }
 
 void display_refresh_page()
 {
-
+	_show_page();
 }
 
 void display_welcome_message()
@@ -68,7 +72,7 @@ void _show_page()
 {
 	_clear_display();
 
-	switch(current_page)
+	switch(currentPage)
 	{
 		case 0:
 			_display_battery_status();
@@ -90,18 +94,49 @@ void _clear_display()
 
 void _display_battery_status()
 {
+	_clear_buffer();
 	oled_move_xy(0, 0);
-	oled_str("Battery status");
+	
+	os_sprintf(oledBuffer[0], "   Battery status   ");
+	os_sprintf(oledBuffer[1], "H:#######  S:#####  ");
+	os_sprintf(oledBuffer[2], "V: %sV   V: %sV ", batteryStatus.bat2Voltage, batteryStatus.bat1Voltage);
+	os_sprintf(oledBuffer[3], "I: %sA", batteryStatus.bat2Current);
+
+	oled_put_buffer(oledBuffer);
 }
 
 void _display_tanks_status()
 {
+	_clear_buffer();
 	oled_move_xy(0, 0);
-	oled_str("Tanks status");
+	
+	os_sprintf(oledBuffer[0], "     Tank status     ");
+	os_sprintf(oledBuffer[1], "F: ############  %s%%", fuelTankStatus.level);
+	os_sprintf(oledBuffer[2], "W: #########     %s%%", waterTankStatus.level);
+
+	oled_put_buffer(oledBuffer);
 }
 
 void _display_engine_hours()
 {
+	_clear_buffer();
 	oled_move_xy(0, 0);
-	oled_str("Engine hours");
+	
+	os_sprintf(oledBuffer[0], "     Engine hours    ");
+	os_sprintf(oledBuffer[1], "TOTAL: %d Hrs ", engineHoursStatus.totalHours);
+	os_sprintf(oledBuffer[2], "TRIP: %d Hrs  ", engineHoursStatus.tripHours);
+
+	oled_put_buffer(oledBuffer);
+}
+
+void _clear_buffer()
+{
+	uint8_t i,j;
+	for(i=0; i<4; ++i)
+	{
+		for(j=0; j<20; ++j)
+		{
+			oledBuffer[i][j] = 0;
+		}
+	}
 }

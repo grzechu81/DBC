@@ -31,6 +31,7 @@ void oled_cmd(uint8_t cmd);
 void oled_data(uint8_t data);
 void oled_move_xy(uint8_t row, uint8_t col);
 void oled_str(char* string);
+void oled_put_buffer(char buffer[4][20]);
 
 
 #endif
