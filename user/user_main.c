@@ -1,12 +1,13 @@
 #include "ets_sys.h"
 #include "osapi.h"
 #include "gpio.h"
-#include "os_type.h"
 #include "user_interface.h"
-#include "encoder.h"
-#include "display_logic.h"
 #include "espconn.h"
 #include "mem.h"
+
+#include "encoder.h"
+#include "display_logic.h"
+
 
 #define user_procTaskPrio        0
 #define user_procTaskQueueLen    1
