@@ -3,8 +3,7 @@
 #include "osapi.h"
 
 volatile uint8_t currentPage;
-
-char oledBuffer[4][20] = {0};
+unsigned char oledBuffer[4][20];
 
 struct battery_status
 {
@@ -26,6 +25,7 @@ struct engine_hours_status
 
 void _show_page();
 void _clear_buffer();
+void _show_buffer();
 void _clear_display();
 void _display_battery_status();
 void _display_tanks_status();
@@ -81,6 +81,7 @@ void display_welcome_message()
 
 void _show_page()
 {
+	os_printf("_show_page %d\n", currentPage);   
 	_clear_display();
 
 	switch(currentPage)
@@ -99,45 +100,45 @@ void _show_page()
 
 void _clear_display()
 {
-	oled_cmd(0x01);
-	os_delay_us(6000);
+	oled_cmd(0x02);
+	// oled_cmd(0x01);
+	// os_delay_us(30000);
 }
 
 void _display_battery_status()
 {
-	_clear_buffer();
-	oled_move_xy(0, 0);
+	//_clear_buffer();
 	
-	os_sprintf(oledBuffer[0], "   Battery status   ");
-	os_sprintf(oledBuffer[1], "H:#######  S:#####  ");
-	os_sprintf(oledBuffer[2], "V: %sV   V: %sV", batteryStatus.bat2Voltage, batteryStatus.bat1Voltage);
-	os_sprintf(oledBuffer[3], "I: %sA", batteryStatus.bat2Current);
+	os_memcpy(oledBuffer[0], "   Battery status   ", 20);
+	os_memcpy(oledBuffer[1], "H:#######  S:#####  ", 20);
+	os_memcpy(oledBuffer[2], "V: 12.1V   V:12.5V  ", 20);
+	os_memcpy(oledBuffer[3], "I: -1.1A            ", 20);
 
-	oled_put_buffer(oledBuffer);
+	_show_buffer();
 }
 
 void _display_tanks_status()
 {
-	_clear_buffer();
-	oled_move_xy(0, 0);
-	
-	os_sprintf(oledBuffer[0], "     Tank status     ");
-	os_sprintf(oledBuffer[1], "F: ############  %s%%", fuelTankStatus.level);
-	os_sprintf(oledBuffer[2], "W: #########     %s%%", waterTankStatus.level);
+	//_clear_buffer();
 
-	oled_put_buffer(oledBuffer);
+	os_memcpy(oledBuffer[0], "     Tank status    ", 20);
+	os_memcpy(oledBuffer[1], "F: ############  88%", 20);
+	os_memcpy(oledBuffer[2], "W: #########     60%", 20);
+	os_memset(oledBuffer[3], 0x20, 20);
+
+	_show_buffer();
 }
 
 void _display_engine_hours()
 {
-	_clear_buffer();
-	oled_move_xy(0, 0);
+	//_clear_buffer();
 	
-	os_sprintf(oledBuffer[0], "     Engine hours    ");
-	os_sprintf(oledBuffer[1], "TOTAL: %d Hrs ", engineHoursStatus.totalHours);
-	os_sprintf(oledBuffer[2], "TRIP: %d Hrs  ", engineHoursStatus.tripHours);
+	os_memcpy(oledBuffer[0], "     Engine hours   ", 20);
+	os_memcpy(oledBuffer[1], "TOTAL: 1845 Hrs     ", 20);
+	os_memcpy(oledBuffer[2], " TRIP: 23   Hrs     ", 20);
+	os_memset(oledBuffer[3], 0x20, 20);
 
-	oled_put_buffer(oledBuffer);
+	_show_buffer();
 }
 
 void _clear_buffer()
@@ -145,6 +146,16 @@ void _clear_buffer()
 	uint8_t i;
 	for(i=0; i<4; ++i)
 	{
-		os_memset(oledBuffer[i], 0, 20);
+		os_memset(oledBuffer[i], 0x20, 20);
+	}
+}
+
+void _show_buffer()
+{
+	uint8_t i;
+	for(i=0; i<4; ++i)
+	{
+		oled_move_xy(i, 0);
+		oled_put_buffer(oledBuffer[i], 20);
 	}
 }

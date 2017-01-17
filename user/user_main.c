@@ -69,17 +69,20 @@ static void ICACHE_FLASH_ATTR  loop(os_event_t *events)
 {
    if(direction != lastDirection)
    {
+        lastDirection = direction;
+
         if(direction != DIR_UNDEFINED)
         {
             os_printf("%s \r\n", direction == DIR_CW ? "CW" : "CCW");   
-
+            ETS_GPIO_INTR_DISABLE();    
             if(direction == DIR_CW)
                 display_next_page();
             else
                 display_prev_page();
+            ETS_GPIO_INTR_ENABLE();
         }
         
-        lastDirection = direction;
+        
    }
    
    // turn again
@@ -88,11 +91,12 @@ static void ICACHE_FLASH_ATTR  loop(os_event_t *events)
 
 void timerElapsed(void *arg)
 {
-   
+   display_refresh_page();
 }
 
 void ICACHE_FLASH_ATTR user_init()
 {
+    system_set_os_print(1);
     uart_div_modify(0, UART_CLK_FREQ / 9600);
 
     direction = DIR_UNDEFINED;
@@ -116,7 +120,7 @@ void ICACHE_FLASH_ATTR user_init()
 
     // os_timer_disarm(&testTimer);
     // os_timer_setfn(&testTimer, (os_timer_func_t *)timerElapsed, NULL);
-    // os_timer_arm(&testTimer, 1000, 1);
+    // os_timer_arm(&testTimer, 2000, 1);
     // wajcha = 0;
 
     os_printf("Done !!!\n");  
@@ -161,8 +165,8 @@ void ICACHE_FLASH_ATTR softap_config(void)
 
     os_memset(config.ssid, 0, 32);
     os_memset(config.password, 0, 64);
-    os_memcpy(config.ssid, "ESP8266", 7);
-    os_memcpy(config.password, "12345678", 8);
+    os_memcpy(config.ssid, "8266", 4);
+    os_memcpy(config.password, "Dehler34", 8);
     config.authmode = AUTH_WPA_WPA2_PSK;
     config.ssid_len = 0;// or its actual length
     config.max_connection = 4; // how many stations can connect to ESP8266 softAP at most.

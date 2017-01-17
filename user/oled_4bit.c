@@ -49,8 +49,7 @@ void oled_cmd(uint8_t cmd)
 	GPIO_OUTPUT_SET(GPIO_ID_PIN(PIN_RS_N), 0);
 	send_4bits(cmd >> 4);
 	send_4bits(cmd);
-
-	os_delay_us(100);
+	//os_delay_us(100);
 }
 
 void oled_data(uint8_t data)
@@ -58,8 +57,7 @@ void oled_data(uint8_t data)
 	GPIO_OUTPUT_SET(GPIO_ID_PIN(PIN_RS_N), 1);
 	send_4bits(data >> 4);
 	send_4bits(data);
-
-	os_delay_us(100);
+	//os_delay_us(100);
 }
 
 void oled_move_xy(uint8_t row, uint8_t col)
@@ -90,15 +88,12 @@ void oled_str(char* string)
 	}
 }
 
-void oled_put_buffer(char buffer[4][20])
+void oled_put_buffer(unsigned char *buffer, uint8_t length)
 {
-	uint8_t line, row;
-	for(line = 0; line< 4; ++line)
+	uint8_t i;
+	for(i = 0; i< length; ++i)
 	{
-		for(row = 0; row < 20; ++row)
-		{
-			oled_data(buffer[line][row]);
-		}
+		oled_data(buffer[i]);
 	}
 }
 
