@@ -45,7 +45,7 @@ void encoder_init()
 
   ETS_GPIO_INTR_ENABLE();
 
-	state = R_START;
+  state = R_START;
 }
 
 uint8 encoder_process(uint8 p1, uint8 p2)

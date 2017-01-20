@@ -80,9 +80,7 @@ static void ICACHE_FLASH_ATTR  loop(os_event_t *events)
             else
                 display_prev_page();
             ETS_GPIO_INTR_ENABLE();
-        }
-        
-        
+        }   
    }
    
    // turn again
