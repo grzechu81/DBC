@@ -19,12 +19,13 @@ static void loop(os_event_t *events);
 static struct espconn ptrespconn;
 
 // variable modified indirectly by interrupt handler
-volatile uint8 direction, lastDirection;
+volatile uint8 direction, lastDirection, buttonState, lastButtonState;
 
 // gpio interrupt handler. See below
 void gpio_intr_handler(int * dummy);
 void ICACHE_FLASH_ATTR softap_config(void);
 void ICACHE_FLASH_ATTR udp_listener_init(void);
+void ICACHE_FLASH_ATTR button_config();
 
 
 uint32 ICACHE_FLASH_ATTR
@@ -67,31 +68,29 @@ user_rf_pre_init(void)
 
 static void ICACHE_FLASH_ATTR  loop(os_event_t *events)
 {
-   if(direction != lastDirection)
-   {
-        lastDirection = direction;
+   // if(direction != lastDirection)
+   // {
+   //      lastDirection = direction;
 
-        if(direction != DIR_UNDEFINED)
-        {
-            os_printf("%s \r\n", direction == DIR_CW ? "CW" : "CCW");   
-            ETS_GPIO_INTR_DISABLE();    
-            if(direction == DIR_CW)
-                display_next_page();
-            else
-                display_prev_page();
-            ETS_GPIO_INTR_ENABLE();
-        }
-        
-        
-   }
-   
-   // turn again
-   system_os_post(user_procTaskPrio, 0, 0 );
+   //      if(direction != DIR_UNDEFINED)
+   //      {
+   //          os_printf("%s \r\n", direction == DIR_CW ? "CW" : "CCW");   
+   //          ETS_GPIO_INTR_DISABLE();    
+   //          if(direction == DIR_CW)
+   //              display_next_page();
+   //          else
+   //              display_prev_page();
+   //          ETS_GPIO_INTR_ENABLE();
+   //      }  
+   // }
+
+    display_next_page();
+    os_printf("dup !\n");  
 }
 
 void timerElapsed(void *arg)
 {
-   display_refresh_page();
+
 }
 
 void ICACHE_FLASH_ATTR user_init()
@@ -99,15 +98,19 @@ void ICACHE_FLASH_ATTR user_init()
     system_set_os_print(1);
     uart_div_modify(0, UART_CLK_FREQ / 9600);
 
-    direction = DIR_UNDEFINED;
-    lastDirection = DIR_UNDEFINED;
+
+
+    // direction = DIR_UNDEFINED;
+    // lastDirection = DIR_UNDEFINED;
 
     os_printf("Initializing...\n");
 
     //Initialize the GPIO subsystem.
+
     gpio_init();
-    encoder_init();
+    //encoder_init();
     display_init();
+    button_config();
 
     display_welcome_message();
 
@@ -120,14 +123,14 @@ void ICACHE_FLASH_ATTR user_init()
 
     // os_timer_disarm(&testTimer);
     // os_timer_setfn(&testTimer, (os_timer_func_t *)timerElapsed, NULL);
-    // os_timer_arm(&testTimer, 2000, 1);
+    // os_timer_arm(&testTimer, 1000, 1);
     // wajcha = 0;
 
     os_printf("Done !!!\n");  
     
     //Start os task
     system_os_task(loop, user_procTaskPrio,user_procTaskQueue, user_procTaskQueueLen);
-    system_os_post(user_procTaskPrio, 0, 0 );
+    // system_os_post(user_procTaskPrio, 0, 0 );
 }
 
 
@@ -141,10 +144,22 @@ void gpio_intr_handler(int* arg)
 
     uint32 inputs = gpio_input_get();
 
-    uint8 p1 = (inputs >> 4) & BIT0;
-    uint8 p2 = (inputs >> 5) & BIT0;
+    // uint8 p1 = (inputs >> 4) & BIT0;
+    // uint8 p2 = (inputs >> 5) & BIT0;
 
-    direction = encoder_process(p1, p2);
+    buttonState = (inputs >> 5) & BIT0;
+
+    if(buttonState == 0 & buttonState != lastButtonState)
+    {
+        // turn again
+        system_os_post(user_procTaskPrio, 0, 0 );
+    }
+
+    lastButtonState = buttonState;
+
+    os_printf("Button %d\n", buttonState);
+
+    // direction = encoder_process(p1, p2);
 
     //clear interrupt status
     GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, gpio_status);
@@ -155,6 +170,18 @@ void gpio_intr_handler(int* arg)
 void ICACHE_FLASH_ATTR udp_recv_handler(void *arg, char *pusrdata, unsigned short length)
 {
     //espconn_sent(&ptrespconn, DeviceBuffer, length);
+}
+
+void ICACHE_FLASH_ATTR button_config()
+{
+    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);
+    PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO5_U);
+    GPIO_DIS_OUTPUT(GPIO_ID_PIN(5));
+    ETS_GPIO_INTR_DISABLE();
+    ETS_GPIO_INTR_ATTACH(gpio_intr_handler, 0);
+    GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, BIT(5));
+    gpio_pin_intr_state_set(GPIO_ID_PIN(5), GPIO_PIN_INTR_ANYEDGE);
+    ETS_GPIO_INTR_ENABLE();
 }
 
 void ICACHE_FLASH_ATTR softap_config(void)

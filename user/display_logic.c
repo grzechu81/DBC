@@ -81,8 +81,8 @@ void display_welcome_message()
 
 void _show_page()
 {
-	os_printf("_show_page %d\n", currentPage);   
-	_clear_display();
+	//os_printf("_show_page %d\n", currentPage);   
+	//_clear_display();
 
 	switch(currentPage)
 	{
