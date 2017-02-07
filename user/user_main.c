@@ -68,22 +68,6 @@ user_rf_pre_init(void)
 
 static void ICACHE_FLASH_ATTR  loop(os_event_t *events)
 {
-   // if(direction != lastDirection)
-   // {
-   //      lastDirection = direction;
-
-   //      if(direction != DIR_UNDEFINED)
-   //      {
-   //          os_printf("%s \r\n", direction == DIR_CW ? "CW" : "CCW");   
-   //          ETS_GPIO_INTR_DISABLE();    
-   //          if(direction == DIR_CW)
-   //              display_next_page();
-   //          else
-   //              display_prev_page();
-   //          ETS_GPIO_INTR_ENABLE();
-   //      }  
-   // }
-
     display_next_page();
     os_printf("dup !\n");  
 }
@@ -97,11 +81,6 @@ void ICACHE_FLASH_ATTR user_init()
 {
     system_set_os_print(1);
     uart_div_modify(0, UART_CLK_FREQ / 9600);
-
-
-
-    // direction = DIR_UNDEFINED;
-    // lastDirection = DIR_UNDEFINED;
 
     os_printf("Initializing...\n");
 
@@ -144,9 +123,6 @@ void gpio_intr_handler(int* arg)
 
     uint32 inputs = gpio_input_get();
 
-    // uint8 p1 = (inputs >> 4) & BIT0;
-    // uint8 p2 = (inputs >> 5) & BIT0;
-
     buttonState = (inputs >> 5) & BIT0;
 
     if(buttonState == 0 & buttonState != lastButtonState)
@@ -158,8 +134,6 @@ void gpio_intr_handler(int* arg)
     lastButtonState = buttonState;
 
     os_printf("Button %d\n", buttonState);
-
-    // direction = encoder_process(p1, p2);
 
     //clear interrupt status
     GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, gpio_status);

@@ -7,7 +7,7 @@ void wait();
 
 void oled_init()
 {
-	uint8_t i;
+    uint8_t i;
 
     ETS_GPIO_INTR_DISABLE();
 
@@ -35,7 +35,7 @@ void oled_init()
     //Syncronization
     for(i=0; i<5; ++i)
     {
-    	send_4bits(0x0);
+        send_4bits(0x0);
     }
 
     //Enter 4Bit mode
@@ -76,30 +76,30 @@ void oled_data(uint8_t data)
 
 void oled_move_xy(uint8_t row, uint8_t col)
 {
-	switch(row)
-	{
-		case 0:
-			oled_cmd(0x80+col);
-			break;
-		case 1:
-			oled_cmd(0xc0+col);
-			break;
-		case 2:
-			oled_cmd(0x94+col);
-			break;
-		case 3:
-			oled_cmd(0xd4+col);
-			break;
-	}
+    switch(row)
+    {
+        case 0:
+            oled_cmd(0x80+col);
+            break;
+        case 1:
+            oled_cmd(0xc0+col);
+            break;
+        case 2:
+            oled_cmd(0x94+col);
+            break;
+        case 3:
+            oled_cmd(0xd4+col);
+            break;
+    }
 }
 
 void oled_str(char* string)
 {
-	while(*string != 0x0)
-	{
-		oled_data(*string);
-		string++;
-	}
+    while(*string != 0x0)
+    {
+        oled_data(*string);
+        string++;
+    }
 }
 
 void oled_put_buffer(unsigned char *buffer, uint8_t length)
@@ -181,3 +181,4 @@ void wait()
     //Set RW line to low
     GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, PIN_RW_MASK);
 }
+
