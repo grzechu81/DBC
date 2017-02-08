@@ -111,7 +111,7 @@ void _display_battery_status()
 	
 	os_memcpy(oledBuffer[0], "   Battery status   ", 20);
 	os_memcpy(oledBuffer[1], "H:#######  S:#####  ", 20);
-	os_memcpy(oledBuffer[2], "V: 12.1V   V:12.5V  ", 20);
+	os_memcpy(oledBuffer[2], "\x00: 12.1V   \x01:12.5V  ", 20);
 	os_memcpy(oledBuffer[3], "I: -1.1A            ", 20);
 
 	_show_buffer();
@@ -122,8 +122,8 @@ void _display_tanks_status()
 	//_clear_buffer();
 
 	os_memcpy(oledBuffer[0], "     Tank status    ", 20);
-	os_memcpy(oledBuffer[1], "F: ############  88%", 20);
-	os_memcpy(oledBuffer[2], "W: #########     60%", 20);
+	os_memcpy(oledBuffer[1], "\x04: ############  88%", 20);
+	os_memcpy(oledBuffer[2], "\x05: #########     60%", 20);
 	os_memset(oledBuffer[3], 0x20, 20);
 
 	_show_buffer();
