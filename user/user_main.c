@@ -120,7 +120,7 @@ void gpio_intr_handler(int* arg)
 
     uint32 gpio_status = GPIO_REG_READ(GPIO_STATUS_ADDRESS);
 
-    os_delay_us(5000);
+    os_delay_us(10000);
 
     uint32 inputs = gpio_input_get();
 
