@@ -2,8 +2,16 @@
 #include "gpio.h"
 
 void send_4bits(uint8_t data);
-uint8_t read_busy_flag();
+void init_custom_chars();
 void wait();
+
+uint32_t regComp1, regComp2;
+uint8_t customCharacters[8][8] = {
+    {0x04, 0x04, 0x04, 0x00, 0x0A, 0x1F, 0x1F, 0x1F}, //Bat 1
+    {0x0A, 0x0A, 0x0A, 0x00, 0x0A, 0x1F, 0x1F, 0x1F}, //Bat 2
+    {0x00, 0x00, 0x0A, 0x1F, 0x1F, 0x0E, 0x04, 0x00}, //Heart
+    {0x00, 0x0E, 0x15, 0x17, 0x11, 0x0E, 0x00, 0x00}  //Clock
+};
 
 void oled_init()
 {
@@ -51,13 +59,23 @@ void oled_init()
     oled_cmd(0xc); //display on
 
     os_delay_us(30000);
+
+    //init_custom_chars();
 }
 
 void oled_cmd(uint8_t cmd)
 {
+    regComp1 = GPIO_REG_READ(GPIO_ENABLE_ADDRESS);
     wait();
+    regComp2 = GPIO_REG_READ(GPIO_ENABLE_ADDRESS);
 
-    GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, PIN_RS_MASK | PIN_RW_MASK | PIN_E_MASK);
+    if(regComp1 != regComp2)
+    {
+        os_printf("oled_cmd GPIO_ENABLE_ADDRESS differs\n");
+    }
+
+    RW_LOW;
+    RS_LOW;
 	
     send_4bits(cmd >> 4);
 	send_4bits(cmd);
@@ -65,10 +83,17 @@ void oled_cmd(uint8_t cmd)
 
 void oled_data(uint8_t data)
 {
-    //wait();
+    regComp1 = GPIO_REG_READ(GPIO_ENABLE_ADDRESS);
+    wait();
+    regComp2 = GPIO_REG_READ(GPIO_ENABLE_ADDRESS);
 
-    GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, PIN_RW_MASK | PIN_E_MASK);
-    GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, PIN_RS_MASK);
+    if(regComp1 != regComp2)
+    {
+        os_printf("oled_data GPIO_ENABLE_ADDRESS differs\n");
+    }
+
+    RW_LOW;
+    RS_HIGH;
 
 	send_4bits(data >> 4);
 	send_4bits(data);
@@ -131,9 +156,9 @@ void send_4bits(uint8_t data)
     GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, DATA_PINS_MASK);
     GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, mask);
 
-    GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, PIN_E_MASK);
+    E_HIGH;
     os_delay_us(1);
-    GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, PIN_E_MASK);
+    E_LOW;
     return;
 }
 
@@ -141,16 +166,11 @@ void wait()
 {
     uint8_t busyFlag = 0;
 
-    //Set RS line low
-    GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, PIN_RS_MASK);
-
-    //Set RW line high
-    GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, PIN_RW_MASK);
+    RW_HIGH;
+    RS_LOW;
 
     //Set data pins as inputs
     GPIO_REG_WRITE(GPIO_ENABLE_W1TC_ADDRESS, DATA_PINS_MASK);
-
-    //os_printf("a");
 
     do
     {
@@ -173,12 +193,20 @@ void wait()
     }
     while(busyFlag);
 
-    //os_printf("b\n");
-
     //Set data pins as outputs
     GPIO_REG_WRITE(GPIO_ENABLE_W1TS_ADDRESS, DATA_PINS_MASK);
+}
 
-    //Set RW line to low
-    GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, PIN_RW_MASK);
+void init_custom_chars()
+{
+    uint8_t i,j;
+    oled_cmd(0x40);
+    for(i=0; i<4;++i)
+    {
+        for(j=0;j<8;++j)
+        {
+            oled_data(customCharacters[i][j]);    
+        }
+    }
 }
 

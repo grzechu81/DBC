@@ -25,7 +25,7 @@ volatile uint8 direction, lastDirection, buttonState, lastButtonState;
 void gpio_intr_handler(int * dummy);
 void ICACHE_FLASH_ATTR softap_config(void);
 void ICACHE_FLASH_ATTR udp_listener_init(void);
-void ICACHE_FLASH_ATTR button_config();
+void ICACHE_FLASH_ATTR button_init();
 
 
 uint32 ICACHE_FLASH_ATTR
@@ -87,9 +87,8 @@ void ICACHE_FLASH_ATTR user_init()
     //Initialize the GPIO subsystem.
 
     gpio_init();
-    //encoder_init();
     display_init();
-    button_config();
+    button_init();
 
     display_welcome_message();
 
@@ -146,7 +145,7 @@ void ICACHE_FLASH_ATTR udp_recv_handler(void *arg, char *pusrdata, unsigned shor
     //espconn_sent(&ptrespconn, DeviceBuffer, length);
 }
 
-void ICACHE_FLASH_ATTR button_config()
+void ICACHE_FLASH_ATTR button_init()
 {
     PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);
     PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO5_U);
