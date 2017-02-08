@@ -6,6 +6,7 @@ void init_custom_chars();
 void wait();
 
 uint32_t regComp1, regComp2;
+
 uint8_t customCharacters[8][8] = {
     {0x04, 0x04, 0x04, 0x00, 0x0A, 0x1F, 0x1F, 0x1F}, //Bat 1
     {0x0A, 0x0A, 0x0A, 0x00, 0x0A, 0x1F, 0x1F, 0x1F}, //Bat 2
@@ -43,8 +44,6 @@ void oled_init()
     //Put all control lines low
     GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, CONTROL_PINS_MASK);
 
-    os_delay_us(5000);
-
     //Syncronization
     for(i=0; i<5; ++i)
     {
@@ -65,19 +64,12 @@ void oled_init()
 
     os_delay_us(30000);
 
-    //init_custom_chars();
+    init_custom_chars();
 }
 
 void oled_cmd(uint8_t cmd)
 {
-    regComp1 = GPIO_REG_READ(GPIO_ENABLE_ADDRESS);
     wait();
-    regComp2 = GPIO_REG_READ(GPIO_ENABLE_ADDRESS);
-
-    if(regComp1 != regComp2)
-    {
-        os_printf("oled_cmd GPIO_ENABLE_ADDRESS differs\n");
-    }
 
     RW_LOW;
     RS_LOW;
@@ -88,15 +80,8 @@ void oled_cmd(uint8_t cmd)
 
 void oled_data(uint8_t data)
 {
-    regComp1 = GPIO_REG_READ(GPIO_ENABLE_ADDRESS);
-    wait();
-    regComp2 = GPIO_REG_READ(GPIO_ENABLE_ADDRESS);
-
-    if(regComp1 != regComp2)
-    {
-        os_printf("oled_data GPIO_ENABLE_ADDRESS differs\n");
-    }
-
+    //wait();
+    
     RW_LOW;
     RS_HIGH;
 
@@ -179,16 +164,16 @@ void wait()
 
     do
     {
-        GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, PIN_E_MASK);
+        E_HIGH;
         os_delay_us(1);
-        GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, PIN_E_MASK);
+        E_LOW;
 
         //EXPERIMENTAL: busyFlag = (GPIO_REG_READ(GPIO_IN_ADDRESS) >> PIN_D7_N) & 0x1;
         busyFlag = (gpio_input_get() >> PIN_D7_N) & 0x1;
 
-        GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, PIN_E_MASK);
+        E_HIGH;
         os_delay_us(1);
-        GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, PIN_E_MASK);
+        E_LOW;
 
         if(busyFlag)
         {
@@ -200,6 +185,10 @@ void wait()
 
     //Set data pins as outputs
     GPIO_REG_WRITE(GPIO_ENABLE_W1TS_ADDRESS, DATA_PINS_MASK);
+
+    RW_LOW;
+    RS_LOW;
+
 }
 
 void init_custom_chars()

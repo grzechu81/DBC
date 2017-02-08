@@ -122,8 +122,8 @@ void _display_tanks_status()
 	//_clear_buffer();
 
 	os_memcpy(oledBuffer[0], "     Tank status    ", 20);
-	os_memcpy(oledBuffer[1], "\x04: ############  88%", 20);
-	os_memcpy(oledBuffer[2], "\x05: #########     60%", 20);
+	os_memcpy(oledBuffer[1], "\x04:\x07\x07\x07\x07\x07\x07\x07\x07\x07\x07\x06    88%", 20);
+	os_memcpy(oledBuffer[2], "\x05:\x07\x07\x07\x07\x07\x07\x07\x07\x06      60%", 20);
 	os_memset(oledBuffer[3], 0x20, 20);
 
 	_show_buffer();

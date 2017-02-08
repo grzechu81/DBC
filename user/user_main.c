@@ -10,7 +10,7 @@
 
 
 #define user_procTaskPrio        0
-#define user_procTaskQueueLen    1
+#define user_procTaskQueueLen    5
 #define IS_BUSY read_busy_flag()
 
 os_event_t user_procTaskQueue[user_procTaskQueueLen];
@@ -19,7 +19,7 @@ static void loop(os_event_t *events);
 static struct espconn ptrespconn;
 
 // variable modified indirectly by interrupt handler
-volatile uint8 direction, lastDirection, buttonState, lastButtonState;
+volatile uint8 buttonState, displayRefresh;
 
 // gpio interrupt handler. See below
 void gpio_intr_handler(int * dummy);
@@ -70,6 +70,7 @@ static void ICACHE_FLASH_ATTR  loop(os_event_t *events)
 {
     display_next_page();
     os_printf("dup !\n");  
+    displayRefresh = 0;
 }
 
 void timerElapsed(void *arg)
@@ -83,9 +84,11 @@ void ICACHE_FLASH_ATTR user_init()
     uart_div_modify(0, UART_CLK_FREQ / 9600);
 
     os_printf("Initializing...\n");
+    
+    buttonState = 0;
+    displayRefresh = 0;
 
-    //Initialize the GPIO subsystem.
-
+    //Initialize the GPIO subsystem
     gpio_init();
     display_init();
     button_init();
@@ -101,8 +104,7 @@ void ICACHE_FLASH_ATTR user_init()
 
     // os_timer_disarm(&testTimer);
     // os_timer_setfn(&testTimer, (os_timer_func_t *)timerElapsed, NULL);
-    // os_timer_arm(&testTimer, 1000, 1);
-    // wajcha = 0;
+    // os_timer_arm(&testTimer, 100, 0);
 
     os_printf("Done !!!\n");  
     
@@ -118,21 +120,17 @@ void gpio_intr_handler(int* arg)
 
     uint32 gpio_status = GPIO_REG_READ(GPIO_STATUS_ADDRESS);
 
-    os_delay_us(500);
+    os_delay_us(5000);
 
     uint32 inputs = gpio_input_get();
 
     buttonState = (inputs >> 5) & BIT0;
 
-    if(buttonState == 0 & buttonState != lastButtonState)
+    if(buttonState == 0 && !displayRefresh)
     {
-        // turn again
+        displayRefresh = 1;
         system_os_post(user_procTaskPrio, 0, 0 );
     }
-
-    lastButtonState = buttonState;
-
-    os_printf("Button %d\n", buttonState);
 
     //clear interrupt status
     GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, gpio_status);
@@ -153,7 +151,7 @@ void ICACHE_FLASH_ATTR button_init()
     ETS_GPIO_INTR_DISABLE();
     ETS_GPIO_INTR_ATTACH(gpio_intr_handler, 0);
     GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, BIT(5));
-    gpio_pin_intr_state_set(GPIO_ID_PIN(5), GPIO_PIN_INTR_ANYEDGE);
+    gpio_pin_intr_state_set(GPIO_ID_PIN(5), GPIO_PIN_INTR_NEGEDGE);
     ETS_GPIO_INTR_ENABLE();
 }
 
