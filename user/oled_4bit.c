@@ -37,12 +37,8 @@ void oled_init()
     //Turn interrupt back on
     ETS_GPIO_INTR_ENABLE();
 
-    //Set pins as outputs
-    GPIO_REG_WRITE(GPIO_ENABLE_W1TS_ADDRESS, CONTROL_PINS_MASK);
-    GPIO_REG_WRITE(GPIO_ENABLE_W1TS_ADDRESS, DATA_PINS_MASK);
-
-    //Put all control lines low
-    GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, CONTROL_PINS_MASK);
+    GPIO_SET_AS_OUTPUT(CONTROL_PINS_MASK | DATA_PINS_MASK);
+    GPIO_SET_LOW(CONTROL_PINS_MASK);
 
     //Syncronization
     for(i=0; i<5; ++i)
@@ -71,8 +67,7 @@ void oled_cmd(uint8_t cmd)
 {
     wait();
 
-    RW_LOW;
-    RS_LOW;
+    GPIO_SET_LOW(PIN_RS_MASK | PIN_RW_MASK);
 	
     send_4bits(cmd >> 4);
 	send_4bits(cmd);
@@ -80,10 +75,10 @@ void oled_cmd(uint8_t cmd)
 
 void oled_data(uint8_t data)
 {
-    //wait();
+    wait();
     
-    RW_LOW;
-    RS_HIGH;
+    GPIO_SET_LOW(PIN_RW_MASK);
+    GPIO_SET_HIGH(PIN_RS_MASK);
 
 	send_4bits(data >> 4);
 	send_4bits(data);
@@ -143,12 +138,12 @@ void send_4bits(uint8_t data)
     if(data & 0x08)
         mask |= PIN_D7_MASK;
 
-    GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, DATA_PINS_MASK);
-    GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, mask);
+    GPIO_SET_LOW(DATA_PINS_MASK);
+    GPIO_SET_HIGH(mask);
 
-    E_HIGH;
+    GPIO_SET_HIGH(PIN_E_MASK);
     os_delay_us(1);
-    E_LOW;
+    GPIO_SET_LOW(PIN_E_MASK);
     return;
 }
 
@@ -156,24 +151,27 @@ void wait()
 {
     uint8_t busyFlag = 0;
 
-    RW_HIGH;
-    RS_LOW;
+    GPIO_SET_HIGH(PIN_RW_MASK);
+    GPIO_SET_LOW(PIN_RS_MASK);
 
     //Set data pins as inputs
-    GPIO_REG_WRITE(GPIO_ENABLE_W1TC_ADDRESS, DATA_PINS_MASK);
+    GPIO_SET_AS_INPUT(DATA_PINS_MASK);
 
     do
     {
-        E_HIGH;
+        GPIO_SET_HIGH(PIN_E_MASK);
         os_delay_us(1);
-        E_LOW;
+        busyFlag = (gpio_input_get() >> PIN_D7_N) & 0x1;
+        GPIO_SET_LOW(PIN_E_MASK);
+        os_delay_us(1);
 
         //EXPERIMENTAL: busyFlag = (GPIO_REG_READ(GPIO_IN_ADDRESS) >> PIN_D7_N) & 0x1;
-        busyFlag = (gpio_input_get() >> PIN_D7_N) & 0x1;
+        //busyFlag = (gpio_input_get() >> PIN_D7_N) & 0x1;
 
-        E_HIGH;
+        GPIO_SET_HIGH(PIN_E_MASK);
         os_delay_us(1);
-        E_LOW;
+        GPIO_SET_LOW(PIN_E_MASK);
+        os_delay_us(1);
 
         if(busyFlag)
         {
@@ -184,11 +182,10 @@ void wait()
     while(busyFlag);
 
     //Set data pins as outputs
-    GPIO_REG_WRITE(GPIO_ENABLE_W1TS_ADDRESS, DATA_PINS_MASK);
+    GPIO_SET_AS_OUTPUT(DATA_PINS_MASK);
 
-    RW_LOW;
-    RS_LOW;
-
+    GPIO_SET_LOW(PIN_RW_MASK);
+    GPIO_SET_LOW(PIN_RS_MASK);
 }
 
 void init_custom_chars()
