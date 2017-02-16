@@ -5,7 +5,7 @@
 #include "espconn.h"
 #include "mem.h"
 
-#include "encoder.h"
+#include "button.h"
 #include "display_logic.h"
 
 
@@ -17,9 +17,6 @@ os_event_t user_procTaskQueue[user_procTaskQueueLen];
 static volatile os_timer_t testTimer;
 static void loop(os_event_t *events);
 static struct espconn ptrespconn;
-
-// variable modified indirectly by interrupt handler
-volatile uint8 buttonState, displayRefresh;
 
 // gpio interrupt handler. See below
 void gpio_intr_handler(int * dummy);
@@ -66,17 +63,26 @@ user_rf_pre_init(void)
 {
 }
 
-static void ICACHE_FLASH_ATTR  loop(os_event_t *events)
+static void ICACHE_FLASH_ATTR  task_handler(os_event_t *e)
 {
-    display_next_page();
-    os_printf("dup !\n");  
-    displayRefresh = 0;
+    switch(e->sig)
+    {
+        case SIG_BUTTON_SHORT_PRESS:
+            os_printf(" - SIG_BUTTON_SHORT_PRESS\n");   
+            display_next_page();   
+            break;
+        case SIG_BUTTON_LONG_PRESS:
+            os_printf(" - SIG_BUTTON_LONG_PRESS\n");      
+            break;
+    }    
 }
 
 void timerElapsed(void *arg)
 {
 
 }
+
+
 
 void ICACHE_FLASH_ATTR user_init()
 {
@@ -85,9 +91,6 @@ void ICACHE_FLASH_ATTR user_init()
 
     os_printf("Initializing...\n");
     
-    buttonState = 0;
-    displayRefresh = 0;
-
     //Initialize the GPIO subsystem
     gpio_init();
     display_init();
@@ -109,50 +112,13 @@ void ICACHE_FLASH_ATTR user_init()
     os_printf("Done !!!\n");  
     
     //Start os task
-    system_os_task(loop, user_procTaskPrio,user_procTaskQueue, user_procTaskQueueLen);
+    system_os_task(task_handler, user_procTaskPrio,user_procTaskQueue, user_procTaskQueueLen);
     // system_os_post(user_procTaskPrio, 0, 0 );
-}
-
-
-void gpio_intr_handler(int* arg)
-{   
-    ETS_GPIO_INTR_DISABLE();
-
-    uint32 gpio_status = GPIO_REG_READ(GPIO_STATUS_ADDRESS);
-
-    os_delay_us(10000);
-
-    uint32 inputs = gpio_input_get();
-
-    buttonState = (inputs >> 5) & BIT0;
-
-    if(buttonState == 0 && !displayRefresh)
-    {
-        displayRefresh = 1;
-        system_os_post(user_procTaskPrio, 0, 0 );
-    }
-
-    //clear interrupt status
-    GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, gpio_status);
-
-    ETS_GPIO_INTR_ENABLE();   
 }
 
 void ICACHE_FLASH_ATTR udp_recv_handler(void *arg, char *pusrdata, unsigned short length)
 {
     //espconn_sent(&ptrespconn, DeviceBuffer, length);
-}
-
-void ICACHE_FLASH_ATTR button_init()
-{
-    PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);
-    PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO5_U);
-    GPIO_DIS_OUTPUT(GPIO_ID_PIN(5));
-    ETS_GPIO_INTR_DISABLE();
-    ETS_GPIO_INTR_ATTACH(gpio_intr_handler, 0);
-    GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, BIT(5));
-    gpio_pin_intr_state_set(GPIO_ID_PIN(5), GPIO_PIN_INTR_NEGEDGE);
-    ETS_GPIO_INTR_ENABLE();
 }
 
 void ICACHE_FLASH_ATTR softap_config(void)

@@ -65,7 +65,7 @@ void oled_init()
 
 void oled_cmd(uint8_t cmd)
 {
-    wait();
+    //wait();
 
     GPIO_SET_LOW(PIN_RS_MASK | PIN_RW_MASK);
 	
@@ -75,7 +75,7 @@ void oled_cmd(uint8_t cmd)
 
 void oled_data(uint8_t data)
 {
-    wait();
+    //wait();
     
     GPIO_SET_LOW(PIN_RW_MASK);
     GPIO_SET_HIGH(PIN_RS_MASK);
@@ -142,8 +142,9 @@ void send_4bits(uint8_t data)
     GPIO_SET_HIGH(mask);
 
     GPIO_SET_HIGH(PIN_E_MASK);
-    os_delay_us(1);
+    os_delay_us(250);
     GPIO_SET_LOW(PIN_E_MASK);
+    os_delay_us(250);
     return;
 }
 
