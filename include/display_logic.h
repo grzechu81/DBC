@@ -34,9 +34,15 @@
 #define MIN_PAGE 0
 #define MAX_PAGE 2
 
+#define STATE_DISPLAY_ON  0
+#define STATE_DISPLAY_OFF 1
+
+#define SIG_DISPLAY_OFF 3
+
 void display_init();
-void display_next_page();
-void display_prev_page();
+void display_show();
+void display_on();
+void display_off();
 void display_refresh_page();
 void display_welcome_message();
 

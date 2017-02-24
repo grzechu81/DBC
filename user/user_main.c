@@ -69,10 +69,13 @@ static void ICACHE_FLASH_ATTR  task_handler(os_event_t *e)
     {
         case SIG_BUTTON_SHORT_PRESS:
             os_printf(" - SIG_BUTTON_SHORT_PRESS\n");   
-            display_next_page();   
+            display_show();
             break;
         case SIG_BUTTON_LONG_PRESS:
             os_printf(" - SIG_BUTTON_LONG_PRESS\n");      
+            break;
+        case SIG_DISPLAY_OFF:
+            display_off();
             break;
     }    
 }

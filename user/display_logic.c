@@ -3,7 +3,9 @@
 #include "osapi.h"
 
 volatile uint8_t currentPage;
+uint8_t currentState;
 unsigned char oledBuffer[4][20];
+static volatile os_timer_t displayOnTimer;
 
 struct battery_status
 {
@@ -26,46 +28,61 @@ struct engine_hours_status
 void _show_page();
 void _clear_buffer();
 void _show_buffer();
-void _clear_display();
+void _next_page();
 void _display_battery_status();
 void _display_tanks_status();
 void _display_engine_hours();
+void _startTimer();
+void _display_timer_elapsed(void *arg);
 
 void display_init()
 {
 	oled_init();
 	currentPage = 0;
+	currentState = STATE_DISPLAY_OFF;
 
-	os_strcpy(batteryStatus.bat1Voltage, "12.3");
-	os_strcpy(batteryStatus.bat2Voltage, "12.1");
-	os_strcpy(batteryStatus.bat2Current, "-01.5");
+	os_timer_disarm(&displayOnTimer);
+    os_timer_setfn(&displayOnTimer, (os_timer_func_t *)_display_timer_elapsed, NULL);
 
-	os_strcpy(fuelTankStatus.level, "98");
-	os_strcpy(waterTankStatus.level, "57");
+	// os_strcpy(batteryStatus.bat1Voltage, "12.3");
+	// os_strcpy(batteryStatus.bat2Voltage, "12.1");
+	// os_strcpy(batteryStatus.bat2Current, "-01.5");
 
-	engineHoursStatus.totalHours = 1832;
-	engineHoursStatus.tripHours = 21;
+	// os_strcpy(fuelTankStatus.level, "98");
+	// os_strcpy(waterTankStatus.level, "57");
+
+	// engineHoursStatus.totalHours = 1832;
+	// engineHoursStatus.tripHours = 21;
 
 }
 
-void display_next_page()
+void display_show()
 {
-	if(currentPage < MAX_PAGE)
-		currentPage++;
-	else
-		currentPage = MIN_PAGE;
-
-	_show_page();
+	switch(currentState)
+	{
+		case STATE_DISPLAY_ON:
+			_startTimer();
+			_next_page();
+			break;
+		case STATE_DISPLAY_OFF:
+			_startTimer();
+			display_on();
+			_show_page();
+			break;
+	}
 }
 
-void display_prev_page()
+void display_off()
 {
-	if(currentPage > MIN_PAGE)
-		currentPage--;
-	else
-		currentPage = MAX_PAGE;
+	oled_cmd(CMD_DISPLAY_OFF);
+	currentState = STATE_DISPLAY_OFF;
+	currentPage = 0;
+}
 
-	_show_page();
+void display_on()
+{
+	oled_cmd(CMD_DISPLAY_ON);
+	currentState = STATE_DISPLAY_ON;
 }
 
 void display_refresh_page()
@@ -79,11 +96,24 @@ void display_welcome_message()
 	oled_str("-= Dehler 34 =-");
 }
 
+void _startTimer()
+{
+	os_timer_disarm(&displayOnTimer);
+	os_timer_arm(&displayOnTimer, 30000, 0);
+}
+
+void _next_page()
+{
+	if(currentPage < MAX_PAGE)
+		currentPage++;
+	else
+		currentPage = MIN_PAGE;
+
+	_show_page();
+}
+
 void _show_page()
 {
-	//os_printf("_show_page %d\n", currentPage);   
-	//_clear_display();
-
 	switch(currentPage)
 	{
 		case 0:
@@ -98,42 +128,31 @@ void _show_page()
 	}
 }
 
-void _clear_display()
-{
-	oled_cmd(0x02);
-	// oled_cmd(0x01);
-	// os_delay_us(30000);
-}
-
 void _display_battery_status()
 {
 	//_clear_buffer();
 	
-	os_memcpy(oledBuffer[0], "   Battery status   ", 20);
-	os_memcpy(oledBuffer[1], "H:#######  S:#####  ", 20);
-	os_memcpy(oledBuffer[2], "\x00: 12.1V   \x01:12.5V  ", 20);
-	os_memcpy(oledBuffer[3], "I: -1.1A            ", 20);
+	os_memcpy(oledBuffer[0], "\x03 Power              ", 20);
+	os_memcpy(oledBuffer[1], "Bat1: 12.1V -1.1A   ", 20);
+	os_memcpy(oledBuffer[2], "Bat2: 13.4V         ", 20);
+	os_memset(oledBuffer[3], 0x20, 20);
 
 	_show_buffer();
 }
 
 void _display_tanks_status()
 {
-	//_clear_buffer();
-
-	os_memcpy(oledBuffer[0], "     Tank status    ", 20);
-	os_memcpy(oledBuffer[1], "\x04:\x07\x07\x07\x07\x07\x07\x07\x07\x07\x07\x06    88%", 20);
-	os_memcpy(oledBuffer[2], "\x05:\x07\x07\x07\x07\x07\x07\x07\x07\x06      60%", 20);
+    os_memcpy(oledBuffer[0], "\x01 Water & Fuel       ", 20);
+	os_memcpy(oledBuffer[1], " Fuel:  88%         ", 20);
+	os_memcpy(oledBuffer[2], "Water:  60%         ", 20);
 	os_memset(oledBuffer[3], 0x20, 20);
 
 	_show_buffer();
 }
 
-void _display_engine_hours()
+void _display_engine_hours()  
 {
-	//_clear_buffer();
-	
-	os_memcpy(oledBuffer[0], "     Engine hours   ", 20);
+	os_memcpy(oledBuffer[0], "\x00 Engine hours       ", 20);
 	os_memcpy(oledBuffer[1], "TOTAL: 1845 Hrs     ", 20);
 	os_memcpy(oledBuffer[2], " TRIP: 23   Hrs     ", 20);
 	os_memset(oledBuffer[3], 0x20, 20);
@@ -153,9 +172,19 @@ void _clear_buffer()
 void _show_buffer()
 {
 	uint8_t i;
+
+	oled_sync();
+	
 	for(i=0; i<4; ++i)
 	{
 		oled_move_xy(i, 0);
 		oled_put_buffer(oledBuffer[i], 20);
 	}
+
+
+}
+
+void _display_timer_elapsed(void *arg)
+{
+	system_os_post(0, SIG_DISPLAY_OFF, 0 );
 }
